@@ -96,9 +96,11 @@ class ChatbotWidget {
 
             .chatbot-messages {
                 flex: 1;
-                padding: 15px;
-                overflow-y: auto;
-                background: #FAF5FF;
+                 padding: 15px;
+                 overflow-y: auto;
+                 overflow-x: hidden;  /* Ensures horizontal scrolling doesn’t break layout */
+                 background: #FAF5FF;
+                 max-height: 400px;  /* Adjust if needed */
             }
 
             .message {
@@ -109,6 +111,17 @@ class ChatbotWidget {
                 word-wrap: break-word;
                 font-size: 14px;
                 line-height: 1.4;
+                overflow-wrap: break-word;
+            }
+
+            .message ul {
+                padding-left: 20px;  /* Ensures bullet points are inside the container */
+                margin: 0;
+            }
+
+            .message li {
+                word-wrap: break-word;  /* Prevents text from overflowing */
+                overflow-wrap: break-word;
             }
 
             .user-message {
@@ -271,10 +284,18 @@ class ChatbotWidget {
         if (messageId) {
             messageDiv.id = `msg-${messageId}`;
         }
-        messageDiv.textContent = text;
+    
+        // ✅ Use Marked.js only for bot messages to parse Markdown into HTML
+        if (sender === 'bot') {
+            messageDiv.innerHTML = marked.parse(text);
+        } else {
+            messageDiv.textContent = text; // Keep user messages plain
+        }
+    
         this.elements.messages.appendChild(messageDiv);
         this.elements.messages.scrollTop = this.elements.messages.scrollHeight;
     }
+    
 
     async sendToServer(message) {
         try {
