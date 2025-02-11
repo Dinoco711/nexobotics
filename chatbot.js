@@ -116,7 +116,12 @@ class ChatbotWidget {
             }
 
             .message ul {
-                padding-left: 30px;  /* Ensures bullet points are inside the container */
+                padding-left: 20px;  /* Ensures bullet points are inside the container */
+                margin: 0;
+            }
+
+            .message ol {
+                padding-left: 20px;  /* Ensures bullet points are inside the container */
                 margin: 0;
             }
 
