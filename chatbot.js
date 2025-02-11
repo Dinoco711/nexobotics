@@ -51,8 +51,8 @@ class ChatbotWidget {
             .chatbot-container {
                 position: fixed;
                 bottom: 90px;
-                right: 10px;
-                left: 10px;
+                right: 5px;
+                left: 5px;
                 width: 350px;
                 height: 500px;
                 background: white;
