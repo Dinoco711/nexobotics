@@ -1,6 +1,6 @@
 // Chatbot Widget Implementation
 class ChatbotWidget {
-    constructor(serverUrl = 'https://finn-backend-logic.onrender.com') {
+    constructor(serverUrl = 'https://finn-backend-logic.onrender.com/chat') {
         this.serverUrl = serverUrl;
         this.initialize();
     }
