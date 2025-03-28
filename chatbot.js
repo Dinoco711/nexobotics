@@ -4,6 +4,7 @@ class ChatbotWidget {
         this.isOpen = false;
         this.messages = [];
         this.isLoading = false;
+        this.hasGreeted = false; // Add this line
         
         // Updated colors with better contrast
         this.colors = {
@@ -88,6 +89,26 @@ class ChatbotWidget {
                 align-items: center;
                 justify-content: space-between;
             }
+            .header-left {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .bot-avatar {
+                width: 30px;
+                height: 30px;
+                border-radius: 50%;
+                object-fit: cover;
+            }
+            .online-indicator {
+                width: 10px;
+                height: 10px;
+                background: #48BB78;
+                border-radius: 50%;
+                margin-left: 8px;
+                box-shadow: 0 0 0 2px ${this.colors.primary};
+            }
+
             .chatbot-close {
                 background: none;
                 border: none;
@@ -151,13 +172,13 @@ class ChatbotWidget {
             .chatbot-input-field {
                 flex: 1;
                 padding: 10px 14px;
-                border: 1px solid ${this.colors.light};
+                border: none;
                 border-radius: 8px;
                 outline: none;
                 resize: none;
                 font-size: 14px;
                 color: ${this.colors.text};
-                background: white;
+                background: none;
                 transition: border-color 0.2s ease;
                 max-height: 100px;
                 overflow-y: auto;
@@ -184,8 +205,52 @@ class ChatbotWidget {
                 opacity: 0.6;
                 cursor: not-allowed;
             }
+
+            .welcome-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                margin: 20px 0;
+                animation: fadeIn 0.5s ease-out;
+            }
+            .welcome-avatar {
+                width: 120px;
+                height: 120px;
+                border-radius: 50%;
+                margin-bottom: 16px;
+                // border: 3px solid ${this.colors.primary};
+                // box-shadow: 0 4px 12px rgba(8, 177, 255, 0.2);
+                object-fit: cover;
+                filter: drop-shadow(0 0 0.75rem #4259EF)
+            }
+            .welcome-message {
+                color: ${this.colors.text};
+                font-size: 16px;
+                font-weight: 500;
+                text-align: center;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
         `;
         document.head.appendChild(style);
+    }
+
+    createWelcomeMessage() {
+        const welcomeContainer = document.createElement('div');
+        welcomeContainer.className = 'welcome-container';
+
+        const welcomeAvatar = document.createElement('img');
+        welcomeAvatar.className = 'welcome-avatar';
+        welcomeAvatar.src = './assets/n_short_logo.png';
+
+        const welcomeText = document.createElement('div');
+        welcomeText.className = 'welcome-message';
+        welcomeText.textContent = 'How may I assist you?';
+
+        welcomeContainer.append(welcomeAvatar, welcomeText);
+        this.messagesContainer.appendChild(welcomeContainer);
     }
 
     createElements() {
@@ -206,12 +271,25 @@ class ChatbotWidget {
         this.header = document.createElement('div');
         this.header.className = 'chatbot-header';
         
+        const headerLeft = document.createElement('div');
+        headerLeft.className = 'header-left';
+        
+        const botAvatar = document.createElement('img');
+        botAvatar.className = 'bot-avatar';
+        botAvatar.src = './assets/n_short_logo.png'; // You can replace this with your bot image URL
+        
         this.title = document.createElement('span');
-        this.title.textContent = 'Chatbot';
+        this.title.textContent = 'Nexobot';
+        
+        const onlineIndicator = document.createElement('div');
+        onlineIndicator.className = 'online-indicator';
         
         this.closeButton = document.createElement('button');
         this.closeButton.className = 'chatbot-close';
         this.closeButton.textContent = '×';
+
+        headerLeft.append(botAvatar, this.title, onlineIndicator);
+        this.header.append(headerLeft, this.closeButton);
 
         this.messagesContainer = document.createElement('div');
         this.messagesContainer.className = 'chatbot-messages';
@@ -228,10 +306,11 @@ class ChatbotWidget {
         this.sendButton.className = 'chatbot-send-btn';
         this.sendButton.textContent = 'Send';
 
-        this.header.append(this.title, this.closeButton);
+        this.header.append(headerLeft, this.closeButton);
         this.inputContainer.append(this.input, this.sendButton);
         this.window.append(this.header, this.messagesContainer, this.inputContainer);
         this.container.append(this.bubble, this.window);
+        this.createWelcomeMessage();
     }
 
     attachEventListeners() {
@@ -250,6 +329,13 @@ class ChatbotWidget {
         });
     }
 
+    async sendInitialGreeting() {
+        if (this.hasGreeted) return;
+        
+        this.hasGreeted = true;
+        await this.sendMessage('/start', true);
+    }
+
     toggleChat() {
         this.isOpen = !this.isOpen;
         this.window.classList.toggle('open', this.isOpen);
@@ -257,6 +343,7 @@ class ChatbotWidget {
         if (this.isOpen) {
             this.input.focus();
             this.scrollToBottom();
+            this.sendInitialGreeting(); // Add this line
         }
     }
 
@@ -300,13 +387,19 @@ class ChatbotWidget {
         this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
     }
 
-    async sendMessage() {
-        const message = this.input.value.trim();
-        if (!message || this.isLoading) return;
+    async sendMessage(message = null, isInitial = false) {
+        const messageText = message || this.input.value.trim();
+        if ((!messageText || this.isLoading) && !isInitial) return;
 
-        this.addMessage(message, true);
-        this.input.value = '';
-        this.input.style.height = 'auto';
+        if (!isInitial) {
+            this.input.value = '';
+            this.input.style.height = 'auto';
+        }
+        
+        if (!isInitial) {
+            this.addMessage(messageText, true);
+        }
+        
         this.showLoading();
 
         try {
@@ -315,7 +408,7 @@ class ChatbotWidget {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ message }),
+                body: JSON.stringify({ message: messageText }),
                 mode: 'cors'
             });
 
