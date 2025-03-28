@@ -239,7 +239,7 @@ class ChatbotWidget {
                 margin-bottom: 16px;
                 // border: 3px solid ${this.colors.primary};
                 // box-shadow: 0 4px 12px rgba(8, 177, 255, 0.2);
-                object-fit: contain;
+                object-fit: cover;
                 filter: drop-shadow(0 0 0.75rem #4259EF)
             }
             .welcome-message {
