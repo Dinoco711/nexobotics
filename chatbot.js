@@ -16,7 +16,26 @@ class ChatbotWidget {
             muted: '#A0AEC0'
         };
 
+        this.loadMarkedJS();
         this.init();
+    }
+
+    loadMarkedJS() {
+        if (!document.querySelector('script[src*="marked.min.js"]')) {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/marked/marked.min.js';
+            script.onload = () => {
+                // Configure marked options
+                marked.setOptions({
+                    breaks: true,
+                    gfm: true,
+                    headerIds: false,
+                    mangle: false,
+                    sanitize: true
+                });
+            };
+            document.head.appendChild(script);
+        }
     }
 
     init() {
@@ -276,7 +295,7 @@ class ChatbotWidget {
         
         const botAvatar = document.createElement('img');
         botAvatar.className = 'bot-avatar';
-        botAvatar.src = './assets/n_short_logo.png'; // You can replace this with your bot image URL
+        botAvatar.src = './assets/n_black_logo.png'; // You can replace this with your bot image URL
         
         this.title = document.createElement('span');
         this.title.textContent = 'Nexobot';
@@ -350,19 +369,98 @@ class ChatbotWidget {
     addMessage(content, isUser = false) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message-bubble ${isUser ? 'user-message' : 'bot-message'}`;
+        
         if (!isUser && content === 'Typing...') {
             messageDiv.classList.add('typing-indicator');
-        }
-        
-        if (!isUser && typeof marked === 'function' && content !== 'Typing...') {
-            messageDiv.innerHTML = marked.parse(content);
+            messageDiv.textContent = content;
+        } else if (!isUser) {
+            // For bot messages, parse markdown
+            try {
+                // Sanitize and parse markdown
+                const sanitizedContent = this.sanitizeMarkdown(content);
+                messageDiv.innerHTML = marked.parse(sanitizedContent);
+                
+                // Add styles for markdown elements
+                this.addMarkdownStyles();
+            } catch (error) {
+                messageDiv.textContent = content;
+            }
         } else {
+            // User messages remain as plain text
             messageDiv.textContent = content;
         }
         
         this.messagesContainer.appendChild(messageDiv);
         this.messages.push({ content, isUser });
         this.scrollToBottom();
+    }
+
+    sanitizeMarkdown(content) {
+        // Basic sanitization of markdown content
+        return content
+            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+            .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+            .replace(/<[^>]*>/g, ''); // Remove HTML tags
+    }
+
+    addMarkdownStyles() {
+        if (!document.getElementById('markdown-styles')) {
+            const style = document.createElement('style');
+            style.id = 'markdown-styles';
+            style.textContent = `
+                .bot-message {
+                    overflow-x: auto;
+                }
+                .bot-message code {
+                    background: rgba(0,0,0,0.05);
+                    padding: 2px 4px;
+                    border-radius: 3px;
+                    font-family: monospace;
+                    font-size: 0.9em;
+                }
+                .bot-message pre {
+                    background: rgba(0,0,0,0.05);
+                    padding: 10px;
+                    border-radius: 5px;
+                    overflow-x: auto;
+                }
+                .bot-message pre code {
+                    background: none;
+                    padding: 0;
+                }
+                .bot-message a {
+                    color: ${this.colors.primary};
+                    text-decoration: none;
+                }
+                .bot-message a:hover {
+                    text-decoration: underline;
+                }
+                .bot-message ul, .bot-message ol {
+                    padding-left: 20px;
+                    margin: 8px 0;
+                }
+                .bot-message p {
+                    margin: 8px 0;
+                }
+                .bot-message table {
+                    border-collapse: collapse;
+                    width: 100%;
+                    margin: 8px 0;
+                }
+                .bot-message th, .bot-message td {
+                    border: 1px solid ${this.colors.light};
+                    padding: 6px;
+                    text-align: left;
+                }
+                .bot-message blockquote {
+                    border-left: 3px solid ${this.colors.primary};
+                    margin: 8px 0;
+                    padding-left: 10px;
+                    color: ${this.colors.muted};
+                }
+            `;
+            document.head.appendChild(style);
+        }
     }
 
     showLoading() {
